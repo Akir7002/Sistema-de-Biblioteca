@@ -1,0 +1,7 @@
+id;nombre;email;telefono;tipoUsuario;fechaRegistro;activo
+1;Ana García;ana.garcia@email.com;123-456-7890;ESTUDIANTE;2025-09-30;true
+2;Carlos López;carlos.lopez@email.com;123-456-7891;PROFESOR;2025-09-30;true
+3;María Rodríguez;maria.rodriguez@email.com;123-456-7892;ESTUDIANTE;2025-09-30;true
+4;Dr. Juan Pérez;juan.perez@email.com;123-456-7893;ADMINISTRADOR;2025-09-30;true
+5;Laura Martínez;laura.martinez@email.com;123-456-7894;PROFESOR;2025-09-30;true
+6;Pedro Sánchez;pedro.sanchez@email.com;123-456-7895;ESTUDIANTE;2025-09-30;true

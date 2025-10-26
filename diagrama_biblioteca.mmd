@@ -1,0 +1,492 @@
+---
+title: Sistema de Gestión de Biblioteca - Diagrama Completo
+---
+classDiagram
+    %% ========================= MODELO =========================
+    class RecursoBiblioteca {
+        <<abstract>>
+        -int id
+        +getId() int
+        +setId(int id)
+    }
+    
+    class Usuario {
+        -String nombre
+        -String email
+        -String telefono
+        -TipoUsuario tipoUsuario
+        -LocalDate fechaRegistro
+        -List~Prestamo~ historialPrestamos
+        -boolean activo
+        +Usuario()
+        +Usuario(String nombre, String email, String telefono, TipoUsuario tipoUsuario)
+        +getNombre() String
+        +setNombre(String nombre)
+        +getEmail() String
+        +setEmail(String email)
+        +getTelefono() String
+        +setTelefono(String telefono)
+        +getTipoUsuario() TipoUsuario
+        +setTipoUsuario(TipoUsuario tipoUsuario)
+        +isActivo() boolean
+        +setActivo(boolean activo)
+        +getPrestamosActivos() int
+        +puedePrestar() boolean
+        +agregarPrestamo(Prestamo prestamo)
+    }
+    
+    class Libro {
+        -String titulo
+        -String autor
+        -int cantidadDisponible
+        -int cantidadTotal
+        +Libro()
+        +Libro(String titulo, String autor, int cantidadDisponible)
+        +getTitulo() String
+        +setTitulo(String titulo)
+        +getAutor() String
+        +setAutor(String autor)
+        +getCantidadDisponible() int
+        +setCantidadDisponible(int cantidadDisponible)
+        +getCantidadTotal() int
+        +setCantidadTotal(int cantidadTotal)
+        +prestar() boolean
+        +devolver()
+        +estaDisponible() boolean
+    }
+    
+    class Prestamo {
+        -int id
+        -Usuario usuario
+        -Libro libro
+        -LocalDate fechaPrestamo
+        -LocalDate fechaDevolucionEsperada
+        -LocalDate fechaDevolucionReal
+        -EstadoPrestamo estado
+        -String notas
+        +Prestamo()
+        +Prestamo(Usuario usuario, Libro libro)
+        +getId() int
+        +setId(int id)
+        +getUsuario() Usuario
+        +setUsuario(Usuario usuario)
+        +getLibro() Libro
+        +setLibro(Libro libro)
+        +getEstado() EstadoPrestamo
+        +setEstado(EstadoPrestamo estado)
+        +estaVencido() boolean
+        +getDiasRetraso() long
+        +devolver()
+    }
+    
+    class TipoUsuario {
+        <<enumeration>>
+        ESTUDIANTE
+        PROFESOR
+        ADMINISTRADOR
+        -String descripcion
+        -int limitePrestamos
+        -int diasMaximoPrestamo
+        +getDescripcion() String
+        +getLimitePrestamos() int
+        +getDiasMaximoPrestamo() int
+    }
+    
+    class EstadoPrestamo {
+        <<enumeration>>
+        ACTIVO
+        DEVUELTO
+        VENCIDO
+        -String descripcion
+        +getDescripcion() String
+    }
+    
+    %% ========================= REPOSITORIOS =========================
+    class IRepositorio~T~ {
+        <<interface>>
+        +crear(T entidad) boolean
+        +obtenerPorId(int id) T
+        +obtenerTodos() List~T~
+        +actualizar(T entidad) boolean
+        +eliminar(int id) boolean
+    }
+    
+    class BibliotecaRepositorio {
+        -List~Libro~ libros
+        -int contadorId
+        +crear(Libro libro) boolean
+        +obtenerPorId(int id) Libro
+        +obtenerTodos() List~Libro~
+        +actualizar(Libro libro) boolean
+        +eliminar(int id) boolean
+        +buscarPorTitulo(String titulo) List~Libro~
+        +buscarPorAutor(String autor) List~Libro~
+        +obtenerLibrosDisponibles() List~Libro~
+    }
+    
+    class UsuarioRepositorio {
+        -List~Usuario~ usuarios
+        -int contadorId
+        +crear(Usuario usuario) boolean
+        +obtenerPorId(int id) Usuario
+        +obtenerTodos() List~Usuario~
+        +actualizar(Usuario usuario) boolean
+        +eliminar(int id) boolean
+        +buscarPorEmail(String email) Usuario
+        +buscarPorNombre(String nombre) List~Usuario~
+        +obtenerPorTipo(TipoUsuario tipo) List~Usuario~
+        -existeEmail(String email) boolean
+    }
+    
+    class PrestamoRepositorio {
+        -List~Prestamo~ prestamos
+        -int contadorId
+        +crear(Prestamo prestamo) boolean
+        +obtenerPorId(int id) Prestamo
+        +obtenerTodos() List~Prestamo~
+        +actualizar(Prestamo prestamo) boolean
+        +eliminar(int id) boolean
+        +obtenerPorUsuario(Usuario usuario) List~Prestamo~
+        +obtenerPorLibro(Libro libro) List~Prestamo~
+        +obtenerPorEstado(EstadoPrestamo estado) List~Prestamo~
+        +obtenerPrestamosActivos() List~Prestamo~
+        +obtenerPrestamosVencidos() List~Prestamo~
+        +buscarPrestamoActivoPorLibroYUsuario(Libro libro, Usuario usuario) Prestamo
+    }
+    
+    %% ========================= CONTROLADORES =========================
+    class IControlador {
+        <<interface>>
+        +ejecutar()
+        +agregarLibro()
+        +listarLibros()
+        +buscarLibro()
+        +eliminarLibro()
+        +agregarUsuario()
+        +listarUsuarios()
+        +buscarUsuario()
+        +eliminarUsuario()
+        +realizarPrestamo()
+        +devolverLibro()
+        +listarPrestamosActivos()
+        +mostrarPrestamosVencidos()
+        +mostrarEstadisticas()
+    }
+    
+    class IControladorUsuarioExterno {
+        <<interface>>
+        +ejecutar()
+        +mostrarCatalogoCompleto()
+        +buscarPorTitulo()
+        +buscarPorAutor()
+        +mostrarLibrosDisponibles()
+        +mostrarEstadisticas()
+        +mostrarLibrosPopulares()
+        +mostrarAyuda()
+        +mostrarContacto()
+    }
+    
+    class BibliotecaControlador {
+        -IRepositorio~Libro~ repositorioLibros
+        -IRepositorio~Usuario~ repositorioUsuarios
+        -IRepositorio~Prestamo~ repositorioPrestamos
+        -IVista vista
+        +BibliotecaControlador(IRepositorio~Libro~ repositorioLibros, IRepositorio~Usuario~ repositorioUsuarios, IRepositorio~Prestamo~ repositorioPrestamos, IVista vista)
+        +ejecutar()
+        +agregarLibro()
+        +listarLibros()
+        +buscarLibro()
+        +eliminarLibro()
+        +agregarUsuario()
+        +listarUsuarios()
+        +buscarUsuario()
+        +eliminarUsuario()
+        +realizarPrestamo()
+        +devolverLibro()
+        +listarPrestamosActivos()
+        +mostrarPrestamosVencidos()
+        +mostrarEstadisticas()
+        -procesarOpcion(int opcion)
+        -validarPrestamoUsuario(Usuario usuario, Libro libro) boolean
+    }
+    
+    class BibliotecaSwingControlador {
+        -IRepositorio~Libro~ repositorioLibros
+        -IRepositorio~Usuario~ repositorioUsuarios
+        -IRepositorio~Prestamo~ repositorioPrestamos
+        -BibliotecaSwingVista vista
+        +BibliotecaSwingControlador(IRepositorio~Libro~ repositorioLibros, IRepositorio~Usuario~ repositorioUsuarios, IRepositorio~Prestamo~ repositorioPrestamos, BibliotecaSwingVista vista)
+        +ejecutar()
+        +actionPerformed(ActionEvent e)
+        +agregarLibro()
+        +listarLibros()
+        +buscarLibro()
+        +eliminarLibro()
+        +agregarUsuario()
+        +listarUsuarios()
+        +buscarUsuario()
+        +eliminarUsuario()
+        +realizarPrestamo()
+        +devolverLibro()
+        +listarPrestamosActivos()
+        +mostrarPrestamosVencidos()
+        +mostrarEstadisticas()
+        -cargarDatosIniciales()
+    }
+    
+    class ControladorUsuarioExterno {
+        -IRepositorio~Libro~ repositorioLibros
+        -VistaUsuarioExterno vista
+        +ControladorUsuarioExterno(IRepositorio~Libro~ repositorioLibros, VistaUsuarioExterno vista)
+        +ejecutar()
+        +mostrarCatalogoCompleto()
+        +buscarPorTitulo()
+        +buscarPorAutor()
+        +mostrarLibrosDisponibles()
+        +mostrarEstadisticas()
+        +mostrarLibrosPopulares()
+        +mostrarAyuda()
+        +mostrarContacto()
+        -procesarOpcion(int opcion)
+    }
+    
+    class ControladorUsuarioExternoSwing {
+        -IRepositorio~Libro~ repositorioLibros
+        -VistaUsuarioExternoSwing vista
+        +ControladorUsuarioExternoSwing(IRepositorio~Libro~ repositorioLibros, VistaUsuarioExternoSwing vista)
+        +ejecutar()
+        +actionPerformed(ActionEvent e)
+        +mostrarCatalogoCompleto()
+        +buscarPorTitulo()
+        +buscarPorAutor()
+        +mostrarLibrosDisponibles()
+        +mostrarEstadisticas()
+        +mostrarLibrosPopulares()
+        +mostrarAyuda()
+        +mostrarContacto()
+        -realizarBusqueda()
+    }
+    
+    %% ========================= VISTAS =========================
+    class IVista {
+        <<interface>>
+        +mostrarMenu()
+        +mostrarLibros(List~Libro~ libros)
+        +mostrarUsuarios(List~Usuario~ usuarios)
+        +mostrarPrestamos(List~Prestamo~ prestamos)
+        +mostrarMensaje(String mensaje)
+        +mostrarError(String error)
+        +mostrarExito(String mensaje)
+        +leerOpcion() int
+        +leerTexto(String prompt) String
+        +leerNumero(String prompt) int
+        +limpiarPantalla()
+        +pausa()
+    }
+    
+    class IVistaUsuarioExterno {
+        <<interface>>
+        +mostrarMenuPublico()
+        +mostrarCatalogo(List~Libro~ libros)
+        +mostrarDetalleLibro(Libro libro)
+        +mostrarResultadoBusqueda(List~Libro~ libros, String termino)
+        +mostrarMensaje(String mensaje)
+        +mostrarBienvenida()
+        +mostrarDespedida()
+        +leerOpcion() int
+        +leerTexto(String prompt) String
+        +pausa()
+    }
+    
+    class BibliotecaVista {
+        -Scanner scanner
+        +BibliotecaVista()
+        +mostrarMenu()
+        +mostrarLibros(List~Libro~ libros)
+        +mostrarUsuarios(List~Usuario~ usuarios)
+        +mostrarPrestamos(List~Prestamo~ prestamos)
+        +mostrarMensaje(String mensaje)
+        +mostrarError(String error)
+        +mostrarExito(String mensaje)
+        +leerOpcion() int
+        +leerTexto(String prompt) String
+        +leerNumero(String prompt) int
+        +limpiarPantalla()
+        +pausa()
+        +solicitarDatosLibro() Libro
+        +solicitarDatosUsuario() Usuario
+        +mostrarEstadisticas(int totalLibros, int librosDisponibles, int totalUsuarios, int prestamosActivos, int prestamosVencidos)
+        -truncar(String texto, int longitud) String
+    }
+    
+    class BibliotecaSwingVista {
+        -JTabbedPane tabbedPane
+        -JTable tablaLibros
+        -JTable tablaUsuarios
+        -JTable tablaPrestamos
+        -DefaultTableModel modeloLibros
+        -DefaultTableModel modeloUsuarios
+        -DefaultTableModel modeloPrestamos
+        -JTextArea txtMensajes
+        -JTextField txtTitulo
+        -JTextField txtAutor
+        -JTextField txtCantidad
+        -JTextField txtNombre
+        -JTextField txtEmail
+        -JTextField txtTelefono
+        +BibliotecaSwingVista()
+        +mostrarMenu()
+        +mostrarLibros(List~Libro~ libros)
+        +mostrarUsuarios(List~Usuario~ usuarios)
+        +mostrarPrestamos(List~Prestamo~ prestamos)
+        +mostrarMensaje(String mensaje)
+        +mostrarError(String error)
+        +mostrarExito(String mensaje)
+        +setControladorListener(ActionListener controlador)
+        -inicializarComponentes()
+        -crearTabLibros() JPanel
+        -crearTabUsuarios() JPanel
+        -crearTabPrestamos() JPanel
+        -aplicarEstiloTabla(JTable tabla)
+        -crearBotonPersonalizado(String texto, String comando) JButton
+    }
+    
+    class VistaUsuarioExterno {
+        -Scanner scanner
+        +VistaUsuarioExterno()
+        +mostrarBienvenida()
+        +mostrarMenuPublico()
+        +mostrarCatalogo(List~Libro~ libros)
+        +mostrarDetalleLibro(Libro libro)
+        +mostrarResultadoBusqueda(List~Libro~ libros, String termino)
+        +mostrarMensaje(String mensaje)
+        +mostrarDespedida()
+        +leerOpcion() int
+        +leerTexto(String prompt) String
+        +pausa()
+        +mostrarAyudaPrestamos()
+        +mostrarInformacionContacto()
+        +mostrarEstadisticasPublicas(int totalLibros, int librosDisponibles, int totalUsuarios, int prestamosHoy)
+        +mostrarLibrosPopulares()
+        -limpiarPantalla()
+        -truncarTexto(String texto, int longitud) String
+        -generarBarraProgreso(double porcentaje) String
+    }
+    
+    class VistaUsuarioExternoSwing {
+        -JTable tablaCatalogo
+        -DefaultTableModel modeloCatalogo
+        -JTextField txtBusqueda
+        -JComboBox~String~ cmbTipoBusqueda
+        -JTextArea txtInformacion
+        -JLabel lblEstadisticas
+        -JButton btnBuscar
+        -JButton btnMostrarTodos
+        -JButton btnSoloDisponibles
+        -JButton btnAyuda
+        -JButton btnContacto
+        -JButton btnPopulares
+        +VistaUsuarioExternoSwing()
+        +mostrarMenuPublico()
+        +mostrarCatalogo(List~Libro~ libros)
+        +mostrarDetalleLibro(Libro libro)
+        +mostrarResultadoBusqueda(List~Libro~ libros, String termino)
+        +mostrarMensaje(String mensaje)
+        +mostrarBienvenida()
+        +mostrarDespedida()
+        +setControladorListener(ActionListener controlador)
+        +getTextoBusqueda() String
+        +getTipoBusqueda() String
+        -inicializarComponentes()
+        -crearPanelBusqueda() JPanel
+        -crearTablaCatalogo() JScrollPane
+        -crearPanelInformacion() JPanel
+        -aplicarEstiloTabla(JTable tabla)
+        -crearBotonPersonalizado(String texto, String comando) JButton
+    }
+    
+    %% ========================= APLICACIONES MAIN =========================
+    class MainConsola {
+        +main(String[] args)$
+        -iniciarAplicacion()$
+        -cargarDatosEjemplo(IRepositorio~Libro~ repoLibros, IRepositorio~Usuario~ repoUsuarios, IRepositorio~Prestamo~ repoPrestamos)$
+    }
+    
+    class AplicacionSwingMain {
+        +main(String[] args)$
+        -iniciarAplicacion()$
+        -cargarDatosEjemplo(IRepositorio~Libro~ repoLibros, IRepositorio~Usuario~ repoUsuarios, IRepositorio~Prestamo~ repoPrestamos)$
+    }
+    
+    class ApUsuarioExternoSwing {
+        +main(String[] args)$
+        -iniciarCatalogoPublico()$
+        -cargarDatosEjemplo(IRepositorio~Libro~ repositorio)$
+    }
+    
+    class AplicacionUsuarioExterno {
+        +main(String[] args)$
+        -iniciarCatalogoPublico()$
+        -cargarDatosEjemplo(IRepositorio~Libro~ repositorio)$
+    }
+    
+    %% ========================= RELACIONES DE HERENCIA =========================
+    RecursoBiblioteca <|-- Usuario
+    RecursoBiblioteca <|-- Libro
+    IControlador <|.. BibliotecaControlador
+    IControlador <|.. BibliotecaSwingControlador
+    IControladorUsuarioExterno <|.. ControladorUsuarioExterno
+    IControladorUsuarioExterno <|.. ControladorUsuarioExternoSwing
+    IVista <|.. BibliotecaVista
+    IVista <|.. BibliotecaSwingVista
+    IVistaUsuarioExterno <|.. VistaUsuarioExterno
+    IVistaUsuarioExterno <|.. VistaUsuarioExternoSwing
+    IRepositorio <|.. BibliotecaRepositorio
+    IRepositorio <|.. UsuarioRepositorio
+    IRepositorio <|.. PrestamoRepositorio
+    ActionListener <|.. BibliotecaSwingControlador
+    ActionListener <|.. ControladorUsuarioExternoSwing
+    
+    %% ========================= RELACIONES DE COMPOSICIÓN Y AGREGACIÓN =========================
+    Usuario "1" --o "*" Prestamo : "tiene historial"
+    Libro "1" --o "*" Prestamo : "es prestado en"
+    Usuario "*" --> "1" TipoUsuario : "es de tipo"
+    Prestamo "*" --> "1" EstadoPrestamo : "tiene estado"
+    
+    %% ========================= RELACIONES DE USO - CONTROLADORES =========================
+    BibliotecaControlador --> IRepositorio : "usa repositorios"
+    BibliotecaControlador --> IVista : "usa vista"
+    BibliotecaSwingControlador --> IRepositorio : "usa repositorios"
+    BibliotecaSwingControlador --> BibliotecaSwingVista : "usa vista swing"
+    ControladorUsuarioExterno --> IRepositorio : "usa repositorio libros"
+    ControladorUsuarioExterno --> VistaUsuarioExterno : "usa vista consola"
+    ControladorUsuarioExternoSwing --> IRepositorio : "usa repositorio libros"
+    ControladorUsuarioExternoSwing --> VistaUsuarioExternoSwing : "usa vista swing"
+    
+    %% ========================= RELACIONES DE USO - APLICACIONES MAIN =========================
+    MainConsola ..> BibliotecaControlador : "crea"
+    MainConsola ..> BibliotecaVista : "crea"
+    MainConsola ..> BibliotecaRepositorio : "crea"
+    MainConsola ..> UsuarioRepositorio : "crea"
+    MainConsola ..> PrestamoRepositorio : "crea"
+    
+    AplicacionSwingMain ..> BibliotecaSwingControlador : "crea"
+    AplicacionSwingMain ..> BibliotecaSwingVista : "crea"
+    AplicacionSwingMain ..> BibliotecaRepositorio : "crea"
+    AplicacionSwingMain ..> UsuarioRepositorio : "crea"
+    AplicacionSwingMain ..> PrestamoRepositorio : "crea"
+    
+    ApUsuarioExternoSwing ..> ControladorUsuarioExternoSwing : "crea"
+    ApUsuarioExternoSwing ..> VistaUsuarioExternoSwing : "crea"
+    ApUsuarioExternoSwing ..> BibliotecaRepositorio : "crea"
+    
+    AplicacionUsuarioExterno ..> ControladorUsuarioExterno : "crea"
+    AplicacionUsuarioExterno ..> VistaUsuarioExterno : "crea"
+    AplicacionUsuarioExterno ..> BibliotecaRepositorio : "crea"
+    
+    %% ========================= NOTAS EXPLICATIVAS =========================
+    note "Sistema completo de gestión de biblioteca\ncon múltiples interfaces de usuario"
+    note for Usuario "Hereda de RecursoBiblioteca\nTiene diferentes tipos con límites específicos"
+    note for Libro "Hereda de RecursoBiblioteca\nManeja inventario disponible vs total"
+    note for BibliotecaControlador "Controlador principal para interfaz consola\nGestiona toda la lógica de negocio"
+    note for BibliotecaSwingControlador "Controlador para interfaz gráfica Swing\nImplementa ActionListener para eventos GUI"

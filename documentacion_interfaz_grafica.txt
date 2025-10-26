@@ -1,0 +1,517 @@
+═══════════════════════════════════════════════════════════════
+        DOCUMENTACIÓN DETALLADA DE LA INTERFAZ GRÁFICA
+                    SISTEMA DE BIBLIOTECA
+═══════════════════════════════════════════════════════════════
+
+1. INTRODUCCIÓN Y VISIÓN GENERAL
+═══════════════════════════════════════════════════════════════
+
+El Sistema de Biblioteca cuenta con dos interfaces gráficas principales desarrolladas con Java Swing:
+
+1. INTERFAZ ADMINISTRATIVA (BibliotecaSwingVista)
+   - Para uso de bibliotecarios y administradores
+   - Gestión completa de libros, usuarios y préstamos
+   - Capacidades de administración avanzadas
+
+2. INTERFAZ PÚBLICA (VistaUsuarioExternoSwing)  
+   - Para consulta pública del catálogo
+   - Solo visualización de libros disponibles
+   - Búsqueda y filtrado del catálogo
+
+═══════════════════════════════════════════════════════════════
+2. INTERFAZ ADMINISTRATIVA - BibliotecaSwingVista
+═══════════════════════════════════════════════════════════════
+
+CARACTERÍSTICAS GENERALES:
+──────────────────────────
+
+• Tipo: JFrame extendido que implementa IVista
+• Patrón: Modelo-Vista-Controlador (MVC)
+• Framework: Java Swing
+• Controlador asociado: BibliotecaSwingControlador
+• Aplicación principal: AplicacionSwingMain.java
+
+DISEÑO VISUAL:
+──────────────
+
+PALETA DE COLORES TERROSOS PARA BIBLIOTECA:
+- COLOR_FONDO_PRINCIPAL: Beige suave (250, 245, 235)
+- COLOR_FONDO_SECUNDARIO: Marrón claro (235, 205, 175)  
+- COLOR_ACENTO: Marrón chocolate (139, 69, 19)
+- COLOR_TEXTO_PRINCIPAL: Marrón oscuro (62, 39, 35)
+- COLOR_BOTONES: Marrón dorado (205, 170, 125)
+- COLOR_BOTONES_HOVER: Marrón dorado oscuro (180, 140, 90)
+- COLOR_BORDES: Bordes suaves (160, 120, 90)
+- COLOR_TABLA_ALTERNANTE: Beige claro (245, 240, 230)
+
+TIPOGRAFÍA PERSONALIZADA:
+- FUENTE_TITULO: Georgia Bold 16pt (elegante para títulos)
+- FUENTE_SUBTITULO: Georgia Bold 14pt (subtítulos)
+- FUENTE_NORMAL: Segoe UI Plain 12pt (texto general)
+- FUENTE_BOTON: Segoe UI Bold 11pt (botones)
+
+ESTRUCTURA DE PESTAÑAS:
+──────────────────────
+
+La interfaz está organizada en 5 pestañas principales:
+
+PESTAÑA LIBROS:
+   └── Panel Formulario (GridBagLayout)
+       ├── Campo Título (JTextField)
+       ├── Campo Autor (JTextField)
+       ├── Campo Cantidad (JTextField)
+       └── Botones: [Agregar Libro] [Eliminar Libro] [Actualizar Lista]
+   └── Tabla de Libros (JTable con DefaultTableModel)
+       └── Columnas: ID | Título | Autor | Disponibles | Prestados | Total
+
+PESTAÑA USUARIOS:
+   └── Panel Formulario (GridBagLayout)
+       ├── Campo Nombre (JTextField)
+       ├── Campo Email (JTextField)
+       ├── Campo Teléfono (JTextField)
+       ├── Combo Tipo Usuario (JComboBox<TipoUsuario>)
+       └── Botones: [Agregar Usuario] [Eliminar Usuario] [Actualizar Lista]
+   └── Tabla de Usuarios (JTable con DefaultTableModel)
+       └── Columnas: ID | Nombre | Email | Tipo | Préstamos | Estado
+
+PESTAÑA PRÉSTAMOS:
+   └── Panel Realizar Préstamo
+       ├── Campo ID Libro (JTextField)
+       ├── Campo ID Usuario (JTextField)
+       └── Botón: [Realizar Préstamo]
+   └── Panel Devolver Libro
+       ├── Campo ID Préstamo (JTextField)
+       └── Botón: [Devolver Libro]
+   └── Panel Listados
+       └── Botones: [Préstamos Activos] [Préstamos Vencidos]
+   └── Tabla de Préstamos (JTable con DefaultTableModel)
+       └── Columnas: ID | Usuario | Libro | Fecha Préstamo | Fecha Límite | Estado | Días Retraso
+
+PESTAÑA BÚSQUEDAS:
+   └── Panel Búsqueda de Libros
+       ├── Campo Búsqueda (JTextField)
+       ├── Combo Tipo Búsqueda (JComboBox): Por Título/Por Autor
+       ├── Botón: [Buscar Libro]
+       └── Tabla Resultados Libros
+   └── Panel Búsqueda de Usuarios
+       ├── Campo Búsqueda (JTextField)
+       ├── Combo Tipo Búsqueda (JComboBox): Por Nombre/Por Email
+       ├── Botón: [Buscar Usuario]
+       └── Tabla Resultados Usuarios
+
+PESTAÑA ESTADÍSTICAS:
+   └── Panel Métricas Principales
+       ├── Label Total Libros
+       ├── Label Libros Disponibles
+       ├── Label Total Usuarios
+       ├── Label Préstamos Activos
+       └── Label Préstamos Vencidos
+   └── Botones de Acción: [Actualizar] [Limpiar Campos]
+
+PANEL INFERIOR DE MENSAJES:
+──────────────────────────
+
+• Área de texto para mostrar mensajes del sistema
+• Scroll automático
+• Diferenciación entre mensajes normales y errores
+• Timestamps automáticos
+
+CARACTERÍSTICAS TÉCNICAS DE LAS TABLAS:
+─────────────────────────────────────
+
+• Modelo: DefaultTableModel con celdas no editables
+• Selección: ListSelectionModel.SINGLE_SELECTION
+• Ordenamiento: TableRowSorter habilitado
+• Altura de fila: 25 píxeles
+• Grid visible con color gris claro
+• Headers no reordenables
+• Zebra-striping (filas alternantes)
+
+FUNCIONALIDADES PRINCIPALES:
+───────────────────────────
+
+GESTIÓN DE LIBROS:
+• Agregar nuevos libros al catálogo
+• Eliminar libros seleccionados
+• Actualizar lista completa de libros
+• Validación de campos obligatorios
+• Control de disponibilidad automático
+
+GESTIÓN DE USUARIOS:
+• Registrar nuevos usuarios
+• Eliminar usuarios (con validaciones)
+• Soporte para tipos: ESTUDIANTE, PROFESOR, ADMINISTRADOR
+• Validación de emails
+• Control de préstamos activos
+
+GESTIÓN DE PRÉSTAMOS:
+• Realizar nuevos préstamos
+• Procesar devoluciones
+• Listar préstamos activos
+• Detectar préstamos vencidos
+• Cálculo automático de días de retraso
+
+BÚSQUEDAS AVANZADAS:
+• Búsqueda de libros por título o autor
+• Búsqueda de usuarios por nombre o email
+• Filtros de disponibilidad
+• Resultados en tiempo real
+
+ESTADÍSTICAS EN TIEMPO REAL:
+• Conteo total de libros en catálogo
+• Libros disponibles vs prestados
+• Total de usuarios registrados
+• Préstamos activos actuales
+• Préstamos vencidos pendientes
+
+═══════════════════════════════════════════════════════════════
+3. INTERFAZ PÚBLICA - VistaUsuarioExternoSwing
+═══════════════════════════════════════════════════════════════
+
+CARACTERÍSTICAS GENERALES:
+──────────────────────────
+
+• Tipo: JFrame extendido que implementa IVistaUsuarioExterno
+• Propósito: Consulta pública de catálogo (solo lectura)
+• Framework: Java Swing
+• Controlador asociado: ControladorUsuarioExternoSwing
+• Aplicación principal: ApUsuarioExternoSwing.java
+
+DISEÑO VISUAL:
+──────────────
+
+• Misma paleta de colores que la interfaz administrativa
+• Diseño más simplificado y orientado al público
+• Headers atractivos con gradientes
+• Iconos intuitivos para mejor UX
+
+ESTRUCTURA DE LA INTERFAZ:
+─────────────────────────
+
+PANEL SUPERIOR (Título y Branding):
+   ├── Título: "📖 CATÁLOGO PÚBLICO - BIBLIOTECA"
+   ├── Subtítulo: "Explora nuestro catálogo de libros disponibles"
+   ├── Fondo: Gradiente azul (41, 128, 185)
+   └── Tipografía: Sans-serif Bold 24pt para título
+
+PANEL DE BÚSQUEDA:
+   ├── Campo Búsqueda (JTextField 20 caracteres)
+   ├── Combo Tipo Búsqueda: [Por Título] [Por Autor]
+   ├── Botón: [🔍 Buscar]
+   ├── Botón: [📚 Ver Todos]
+   └── Botón: [✅ Solo Disponibles]
+
+PANEL CENTRAL - CATÁLOGO:
+   └── Tabla Catálogo (JTable)
+       ├── Columnas: ID | Título | Autor | Disponibles | Total | Estado
+       ├── Configuración de anchos optimizada
+       ├── Solo selección individual
+       └── Grid visible para mejor legibilidad
+
+PANEL LATERAL DE INFORMACIÓN (300px ancho):
+   ├── Botones de Información:
+   │   ├── [🔥 Libros Populares]
+   │   ├── [❓ ¿Cómo pedir prestado?]
+   │   └── [📞 Información de Contacto]
+   └── Área de Texto Informativa:
+       ├── Background gris claro (248, 248, 248)
+       ├── Scroll automático
+       ├── Word wrap habilitado
+       └── Fuente sans-serif 12pt
+
+PANEL INFERIOR - ESTADÍSTICAS:
+   └── Label de Estadísticas (centrado)
+       ├── Fuente bold 12pt
+       ├── Información en tiempo real
+       └── Altura fija 80px
+
+FUNCIONALIDADES PÚBLICAS:
+────────────────────────
+
+CATÁLOGO COMPLETO:
+• Visualización de todos los libros
+• Estado de disponibilidad visible
+• Información detallada por libro
+
+BÚSQUEDA PÚBLICA:
+• Búsqueda por título de libro
+• Búsqueda por nombre de autor
+• Filtro solo libros disponibles
+• Resultados instantáneos
+
+INFORMACIÓN CONTEXTUAL:
+• Libros más populares (más prestados)
+• Instrucciones para solicitar préstamos
+• Información de contacto de la biblioteca
+• Horarios y procedimientos
+
+ESTADÍSTICAS PÚBLICAS:
+• Total de libros en catálogo
+• Libros disponibles actualmente
+• Porcentaje de disponibilidad
+• Información actualizada
+
+═══════════════════════════════════════════════════════════════
+4. CONTROLADORES Y LÓGICA DE NEGOCIO
+═══════════════════════════════════════════════════════════════
+
+BIBIIOTECASWINGCONTROLADOR:
+──────────────────────────
+
+RESPONSABILIDADES:
+• Implementa ActionListener para manejar eventos de la interfaz
+• Conecta la vista con los repositorios de datos
+• Procesa todas las acciones administrativas
+• Valida datos antes de operaciones
+
+COMANDOS DE ACCIÓN SOPORTADOS:
+- AGREGAR_LIBRO: Crea nuevos libros en el catálogo
+- ELIMINAR_LIBRO: Elimina libro seleccionado de la tabla
+- LISTAR_LIBROS: Actualiza la tabla de libros
+- AGREGAR_USUARIO: Registra nuevos usuarios
+- ELIMINAR_USUARIO: Elimina usuario seleccionado
+- LISTAR_USUARIOS: Actualiza la tabla de usuarios
+- REALIZAR_PRESTAMO: Procesa nuevo préstamo
+- DEVOLVER_LIBRO: Procesa devolución de libro
+- LISTAR_PRESTAMOS_ACTIVOS: Muestra préstamos vigentes
+- PRESTAMOS_VENCIDOS: Muestra préstamos atrasados
+- BUSCAR_LIBRO: Ejecuta búsqueda de libros
+- BUSCAR_USUARIO: Ejecuta búsqueda de usuarios
+- MOSTRAR_ESTADISTICAS: Actualiza métricas del sistema
+- LIMPIAR_CAMPOS: Limpia todos los campos de entrada
+
+VALIDACIONES IMPLEMENTADAS:
+• Campos obligatorios no vacíos
+• Formatos de email válidos
+• IDs numéricos válidos
+• Disponibilidad antes de préstamos
+• Usuario sin préstamos antes de eliminación
+
+CONTROLADORUSUARIOEXTERNOSWING:
+────────────────────────────────
+
+RESPONSABILIDADES:
+• Maneja solo operaciones de lectura
+• Procesa búsquedas públicas
+• Muestra información contextual
+• No permite modificaciones de datos
+
+COMANDOS PÚBLICOS SOPORTADOS:
+- BUSCAR: Ejecuta búsqueda según criterio seleccionado
+- MOSTRAR_TODOS: Muestra catálogo completo
+- SOLO_DISPONIBLES: Filtra solo libros disponibles
+- POPULARES: Muestra libros más solicitados
+- AYUDA: Muestra información de ayuda
+- CONTACTO: Muestra datos de contacto
+
+═══════════════════════════════════════════════════════════════
+5. CONFIGURACIÓN Y INICIALIZACIÓN
+═══════════════════════════════════════════════════════════════
+
+APLICACIONSWINGMAIN.JAVA:
+─────────────────────────
+
+CONFIGURACIÓN INICIAL:
+• System.setProperty("file.encoding", "UTF-8") para caracteres especiales
+• UIManager.setLookAndFeel() para aspecto nativo del SO
+• SwingUtilities.invokeLater() para thread-safety
+• Manejo de excepciones en inicialización
+
+DATOS DE EJEMPLO PRECARGADOS:
+• 20 libros en el catálogo inicial
+• 6 usuarios de ejemplo (3 estudiantes, 2 profesores, 1 admin)
+• 2 préstamos activos de demostración
+• 2 títulos marcados como temporalmente agotados
+
+ESTRUCTURA MVC:
+• Instanciación de repositorios (Libros, Usuarios, Préstamos)
+• Creación de vista Swing
+• Inicialización de controlador con dependencias
+• Conexión vista-controlador mediante listeners
+
+APUSUARIOEXTERNOSWING.JAVA:
+──────────────────────────
+
+CONFIGURACIÓN PÚBLICA:
+• Misma configuración de Look&Feel
+• Thread-safety con SwingUtilities
+• Solo repositorio de libros (solo lectura)
+• Datos de demostración para catálogo público
+
+═══════════════════════════════════════════════════════════════
+6. CARACTERÍSTICAS TÉCNICAS AVANZADAS
+═══════════════════════════════════════════════════════════════
+
+MANEJO DE EVENTOS:
+─────────────────
+
+• ActionListener centralizado en controladores
+• Event Dispatch Thread (EDT) respetado
+• Manejo de excepciones en cada acción
+• Feedback inmediato al usuario
+
+OPTIMIZACIONES DE RENDIMIENTO:
+────────────────────────────
+
+• DefaultTableModel personalizado con celdas no editables
+• Lazy loading de datos en tablas
+• Refresh selectivo de componentes
+• Reutilización de objetos Swing
+
+USABILIDAD Y ACCESIBILIDAD:
+──────────────────────────
+
+• Shortcuts de teclado en campos principales
+• Tooltips informativos
+• Mensajes de error descriptivos
+• Validación en tiempo real
+• Feedback visual de estados
+
+RESPONSIVIDAD:
+─────────────
+
+• BorderLayout para adaptabilidad
+• Scroll automático en tablas
+• Redimensionamiento de ventana soportado
+• Componentes que se ajustan al contenido
+
+GESTIÓN DE MEMORIA:
+──────────────────
+
+• DefaultTableModel limpiado antes de nuevos datos
+• Listeners desconectados apropiadamente
+• Referencias nulas para garbage collection
+• Uso eficiente de Collections
+
+═══════════════════════════════════════════════════════════════
+7. FLUJOS DE USUARIO TÍPICOS
+═══════════════════════════════════════════════════════════════
+
+FLUJO ADMINISTRATIVO COMPLETO:
+────────────────────────────
+
+1. GESTIÓN DE LIBROS:
+   • Ir a pestaña "📚 Libros"
+   • Llenar campos: Título, Autor, Cantidad
+   • Clic en "Agregar Libro"
+   • Verificar aparición en tabla
+   • Seleccionar libro en tabla
+   • Clic en "Eliminar Libro Seleccionado" para borrar
+
+2. GESTIÓN DE USUARIOS:
+   • Ir a pestaña "👥 Usuarios"  
+   • Llenar: Nombre, Email, Teléfono
+   • Seleccionar Tipo de Usuario
+   • Clic en "Agregar Usuario"
+   • Verificar en tabla de usuarios
+
+3. PROCESO DE PRÉSTAMO:
+   • Ir a pestaña "📤 Préstamos"
+   • En sección "Realizar Préstamo":
+     - Ingresar ID del libro
+     - Ingresar ID del usuario
+   • Clic en "Realizar Préstamo"
+   • Verificar aparición en tabla de préstamos
+
+4. PROCESO DE DEVOLUCIÓN:
+   • En misma pestaña "📤 Préstamos"
+   • En sección "Devolver Libro":
+     - Ingresar ID del préstamo
+   • Clic en "Devolver Libro"
+   • Verificar cambio de estado
+
+FLUJO PÚBLICO DE CONSULTA:
+────────────────────────
+
+1. CONSULTA GENERAL:
+   • Interface se carga con catálogo completo
+   • Visualizar todos los libros disponibles
+   • Revisar estados de disponibilidad
+
+2. BÚSQUEDA ESPECÍFICA:
+   • Ingresar término en campo de búsqueda
+   • Seleccionar "Por Título" o "Por Autor"
+   • Clic en "🔍 Buscar"
+   • Revisar resultados filtrados
+
+3. INFORMACIÓN ADICIONAL:
+   • Clic en "🔥 Libros Populares"
+   • Clic en "❓ ¿Cómo pedir prestado?"
+   • Clic en "📞 Información de Contacto"
+   • Leer información en panel lateral
+
+═══════════════════════════════════════════════════════════════
+8. MANTENIMIENTO Y EXTENSIBILIDAD
+═══════════════════════════════════════════════════════════════
+
+ARQUITECTURA MODULAR:
+────────────────────
+
+• Separación clara de responsabilidades MVC
+• Interfaces bien definidas (IVista, IControlador)
+• Repositorios intercambiables
+• Componentes reutilizables
+
+PUNTOS DE EXTENSIÓN:
+───────────────────
+
+• Nuevas pestañas fáciles de agregar
+• Campos adicionales en formularios
+• Nuevos tipos de búsqueda
+• Reportes y exportaciones
+• Integración con bases de datos
+
+CONFIGURABILIDAD:
+────────────────
+
+• Colores centralizados en constantes
+• Fuentes configurables
+• Dimensiones ajustables
+• Mensajes externalizables
+• Look & Feel intercambiable
+
+═══════════════════════════════════════════════════════════════
+9. RESUMEN TÉCNICO
+═══════════════════════════════════════════════════════════════
+
+TECNOLOGÍAS UTILIZADAS:
+• Java SE (Swing Framework)
+• Patrón MVC (Model-View-Controller)
+• Event-Driven Programming
+• Repository Pattern para datos
+
+COMPONENTES SWING PRINCIPALES:
+• JFrame (ventanas principales)
+• JTabbedPane (pestañas)
+• JTable con DefaultTableModel (tablas de datos)
+• JTextField (campos de entrada)
+• JComboBox (listas desplegables)
+• JButton con ActionListener (botones)
+• JTextArea (mensajes y información)
+• BorderLayout, GridBagLayout, FlowLayout (layouts)
+
+CARACTERÍSTICAS DESTACADAS:
+• Interfaz intuitiva con iconos y colores temáticos
+• Separación funcional entre interfaz administrativa y pública
+• Validación robusta de datos
+• Feedback inmediato al usuario
+• Diseño responsive y profesional
+• Thread-safety con EDT
+• Manejo comprehensive de excepciones
+
+MÉTRICAS DEL CÓDIGO:
+• BibliotecaSwingVista: 1,016 líneas
+• VistaUsuarioExternoSwing: 723 líneas
+• BibliotecaSwingControlador: 613 líneas
+• ControladorUsuarioExternoSwing: 139 líneas
+
+Total: Más de 2,400 líneas de código GUI profesional
+
+═══════════════════════════════════════════════════════════════
+                        FIN DEL DOCUMENTO
+═══════════════════════════════════════════════════════════════
+
+Creado: Septiembre 2025
+Sistema: Biblioteca Universitaria
+Versión: 3.0 con Interfaz Gráfica Completa
+Autor: David Mauricio Perez

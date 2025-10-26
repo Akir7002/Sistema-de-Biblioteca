@@ -1,0 +1,584 @@
+#  Documentación del Sistema de Persistencia CSV
+
+##  Índice
+1. [Introducción y Objetivos](#introducción-y-objetivos)
+2. [Arquitectura del Sistema](#arquitectura-del-sistema)
+3. [Modificaciones Realizadas](#modificaciones-realizadas)
+4. [Estructura de Archivos CSV](#estructura-de-archivos-csv)
+5. [Implementación Técnica](#implementación-técnica)
+6. [Flujo de Datos](#flujo-de-datos)
+7. [Manejo de Errores](#manejo-de-errores)
+8. [Consideraciones de Rendimiento](#consideraciones-de-rendimiento)
+
+---
+
+##  Introducción y Objetivos
+
+### **Problema Original**
+El sistema inicial de la biblioteca utilizaba **almacenamiento en memoria**, lo que causaba:
+- ❌ **Pérdida de datos** al cerrar la aplicación
+- ❌ **Datos no compartidos** entre diferentes interfaces (MainConsola, AplicacionSwingMain, ApUsuarioExternoSwing)
+- ❌ **Falta de persistencia** para un sistema bibliotecario real
+
+### ✅ **Solución Implementada**
+Migración completa a **persistencia CSV** con las siguientes características:
+-  **Persistencia automática**: Todos los cambios se guardan inmediatamente
+-  **Sincronización**: Las tres aplicaciones comparten exactamente los mismos datos
+-  **Archivos CSV legibles**: Fáciles de respaldar, transferir y editar manualmente
+-  **Integridad referencial**: Mantenimiento automático de relaciones entre entidades
+
+---
+
+## Arquitectura del Sistema
+
+###  **Diagrama de Flujo de Datos**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ AplicacionSwing │    │   MainConsola   │    │ApUsuarioExterno │
+│      Main       │    │                 │    │     Swing       │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          └──────────┬───────────┴──────────┬───────────┘
+                     │                      │
+                     ▼                      ▼
+            ┌─────────────────────────────────────────┐
+            │          DatosEjemplo.java              │
+            │     (Carga centralizada de datos)      │
+            └─────────────────┬───────────────────────┘
+                              │
+                              ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │                REPOSITORIOS                             │
+    ├───────────────┬───────────────┬─────────────────────────┤
+    │BibliotecaRepo │UsuarioRepo    │PrestamoRepositorio      │
+    │               │               │(con inyección deps)     │
+    └───────┬───────┴───────┬───────┴─────────────┬───────────┘
+            │               │                     │
+            ▼               ▼                     ▼
+    ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐
+    │ libros.csv  │ │usuarios.csv │ │   prestamos.csv     │
+    │             │ │             │ │(refs a users/books) │
+    └─────────────┘ └─────────────┘ └─────────────────────┘
+```
+
+###  **Relaciones entre Entidades**
+- **Libros** ↔ **Préstamos**: Un libro puede tener múltiples préstamos
+- **Usuarios** ↔ **Préstamos**: Un usuario puede tener múltiples préstamos
+- **Préstamos**: Entidad intermedia que referencia tanto libros como usuarios
+
+---
+
+## Modificaciones Realizadas
+
+### 1. ** Creación de Estructura de Carpetas**
+```
+Biblioteca/
+├── data/                      # ← NUEVA CARPETA
+│   ├── libros.csv            # ← NUEVO ARCHIVO
+│   ├── usuarios.csv          # ← NUEVO ARCHIVO
+│   └── prestamos.csv         # ← NUEVO ARCHIVO
+└── src/main/java/
+    └── util/
+        └── DatosEjemplo.java  # ← NUEVA CLASE
+```
+
+### 2. ** Modificación del Modelo `Libro.java`**
+
+#### ** Métodos Agregados:**
+```java
+// Conversión a formato CSV
+public String toCsv() {
+    return id + ";" + escape(titulo) + ";" + escape(autor) + ";" + 
+           cantidadDisponible + ";" + cantidadTotal;
+}
+
+// Creación desde línea CSV
+public static Libro fromCsv(String linea) {
+    String[] partes = linea.split(";", -1);
+    // ... lógica de parseo
+}
+
+// Escape de caracteres especiales
+private static String escape(String valor) {
+    if (valor == null) return "";
+    return valor.replace(";", ",").replace("\n", " ").replace("\r", " ");
+}
+```
+
+#### ** Justificación:**
+- **toCsv()**: Convierte el objeto a formato CSV compatible
+- **fromCsv()**: Reconstruye el objeto desde una línea CSV
+- **escape()**: Evita que caracteres especiales rompan el formato CSV
+
+### 3. ** Modificación del Modelo `Usuario.java`**
+
+#### ** Métodos Agregados:**
+```java
+public String toCsv() {
+    return id + ";" + escape(nombre) + ";" + escape(email) + ";" + 
+           escape(telefono) + ";" + tipoUsuario.name() + ";" + 
+           fechaRegistro + ";" + activo;
+}
+
+public static Usuario fromCsv(String linea) {
+    String[] p = linea.split(";", -1);
+    Usuario usuario = new Usuario(p[1].trim(), p[2].trim(), 
+                                 p[3].trim(), TipoUsuario.valueOf(p[4].trim()));
+    // ... configuración de campos adicionales
+    return usuario;
+}
+```
+
+### 4. ** Modificación del Modelo `Prestamo.java`**
+
+#### ** Métodos Agregados:**
+```java
+public String toCsv() {
+    String fechaDevolucionRealStr = (fechaDevolucionReal != null) ? 
+                                   fechaDevolucionReal.toString() : "";
+    return id + ";" + usuario.getId() + ";" + libro.getId() + ";" +
+           fechaPrestamo + ";" + fechaDevolucionEsperada + ";" +
+           fechaDevolucionRealStr + ";" + estado.name() + ";" + escape(notas);
+}
+
+public static Prestamo fromCsv(String linea, Usuario usuario, Libro libro) {
+    String[] p = linea.split(";", -1);
+    Prestamo prestamo = new Prestamo(usuario, libro);
+    // ... configuración desde CSV
+    return prestamo;
+}
+```
+
+#### ** Característica Especial:**
+- **Referencias externas**: `fromCsv()` requiere objetos `Usuario` y `Libro` ya resueltos
+- **Manejo de nulls**: Campos opcionales como `fechaDevolucionReal` y `notas`
+
+### 5. ** Reescritura Completa de Repositorios**
+
+#### **BibliotecaRepositorio.java** - Cambios principales:
+```java
+// ANTES: Almacenamiento en memoria
+private List<Libro> libros = new ArrayList<>();
+
+// DESPUÉS: Persistencia CSV
+private final File archivoCsv = new File("data/libros.csv");
+
+private void guardarTodos(List<Libro> libros) throws IOException {
+    // Escritura a CSV con codificación UTF-8
+}
+
+private List<Libro> cargarTodos() throws IOException {
+    // Lectura desde CSV con manejo de errores
+}
+```
+
+#### **UsuarioRepositorio.java** - Cambios principales:
+```java
+// Patrón similar al BibliotecaRepositorio
+// + Validaciones específicas para usuarios
+// + Manejo de tipos de usuario (enum)
+// + Control de estados activo/inactivo
+```
+
+#### **PrestamoRepositorio.java** - Cambios especiales:
+
+##### ** Problema de Dependencias:**
+El `PrestamoRepositorio` necesita acceso a `UsuarioRepositorio` y `BibliotecaRepositorio` para resolver referencias.
+
+##### ** Solución - Inyección de Dependencias:**
+```java
+public class PrestamoRepositorio implements IRepositorio<Prestamo> {
+    private UsuarioRepositorio usuarioRepositorio;
+    private BibliotecaRepositorio bibliotecaRepositorio;
+    private boolean inicializado = false;
+    
+    // Inyección manual de dependencias
+    public void setUsuarioRepositorio(UsuarioRepositorio repo) {
+        this.usuarioRepositorio = repo;
+        inicializarSiEsNecesario();
+    }
+    
+    public void setBibliotecaRepositorio(BibliotecaRepositorio repo) {
+        this.bibliotecaRepositorio = repo;
+        inicializarSiEsNecesario();
+    }
+    
+    // Inicialización diferida
+    private void inicializarSiEsNecesario() {
+        if (!inicializado && usuarioRepositorio != null && bibliotecaRepositorio != null) {
+            this.contadorId = obtenerMaximoId() + 1;
+            this.inicializado = true;
+        }
+    }
+}
+```
+
+##### ** Problema Original Resuelto:**
+- **Error**: "No se pudieron resolver las referencias para el préstamo"
+- **Causa**: El constructor intentaba cargar datos antes de que las dependencias fueran inyectadas
+- **Solución**: Inicialización diferida (lazy initialization) que espera a que todas las dependencias estén disponibles
+
+### 6. ** Nueva Clase Utilitaria `DatosEjemplo.java`**
+
+#### ** Propósito:**
+Centralizar la carga de datos de ejemplo y evitar duplicaciones entre aplicaciones.
+
+#### ** Características principales:**
+```java
+public static void cargarSiNoExisten(IRepositorio<Libro> repoLibros, 
+                                   IRepositorio<Usuario> repoUsuarios, 
+                                   IRepositorio<Prestamo> repoPrestamos) {
+    
+    File librosFile = new File("data/libros.csv");
+    File usuariosFile = new File("data/usuarios.csv");
+    
+    if (!librosFile.exists() && !usuariosFile.exists()) {
+        // Solo carga datos la primera vez
+        cargarLibrosEjemplo(repoLibros);
+        cargarUsuariosEjemplo(repoUsuarios);
+        cargarPrestamosEjemplo(repoLibros, repoUsuarios, repoPrestamos);
+    } else {
+        System.out.println("Datos existentes encontrados. Cargando desde archivos CSV...");
+    }
+}
+```
+
+#### ** Ventajas:**
+- **Carga única**: Solo la primera ejecución carga datos de ejemplo
+- **Orden correcto**: Libros → Usuarios → Préstamos (respeta dependencias)
+- **Reutilizable**: Todas las aplicaciones usan el mismo código
+- **Detección inteligente**: Verifica existencia de archivos antes de cargar
+
+### 7. ** Modificación de Aplicaciones Principales**
+
+#### **AplicacionSwingMain.java:**
+```java
+// ANTES:
+BibliotecaRepositorio repositorioLibros = new BibliotecaRepositorio();
+UsuarioRepositorio repositorioUsuarios = new UsuarioRepositorio();
+PrestamoRepositorio repositorioPrestamos = new PrestamoRepositorio();
+// Carga manual de datos...
+
+// DESPUÉS:
+BibliotecaRepositorio repositorioLibros = new BibliotecaRepositorio();
+UsuarioRepositorio repositorioUsuarios = new UsuarioRepositorio();
+PrestamoRepositorio repositorioPrestamos = new PrestamoRepositorio();
+
+// ¡IMPORTANTE! Inyección de dependencias
+repositorioPrestamos.setUsuarioRepositorio(repositorioUsuarios);
+repositorioPrestamos.setBibliotecaRepositorio(repositorioLibros);
+
+// Carga centralizada
+DatosEjemplo.cargarSiNoExisten(repositorioLibros, repositorioUsuarios, repositorioPrestamos);
+```
+
+#### **Mismo patrón aplicado a:**
+- `MainConsola.java`
+- `ApUsuarioExternoSwing.java`
+
+---
+
+##  Estructura de Archivos CSV
+
+###  **libros.csv**
+```csv
+id;titulo;autor;cantidadDisponible;cantidadTotal
+1;Don Quijote de la Mancha;Miguel de Cervantes;2;3
+2;Cien Años de Soledad;Gabriel García Márquez;1;2
+3;1984;George Orwell;4;4
+```
+**Campos:**
+- `id`: Identificador único autogenerado
+- `titulo`: Título del libro (con escape de caracteres)
+- `autor`: Nombre del autor (con escape de caracteres)
+- `cantidadDisponible`: Ejemplares disponibles para préstamo
+- `cantidadTotal`: Total de ejemplares en la biblioteca
+
+### **usuarios.csv**
+```csv
+id;nombre;email;telefono;tipoUsuario;fechaRegistro;activo
+1;Ana García;ana.garcia@email.com;123-456-7890;ESTUDIANTE;2025-09-30;true
+2;Carlos López;carlos.lopez@email.com;123-456-7891;PROFESOR;2025-09-30;true
+```
+**Campos:**
+- `id`: Identificador único autogenerado
+- `nombre`: Nombre completo del usuario
+- `email`: Correo electrónico único
+- `telefono`: Número de contacto
+- `tipoUsuario`: ESTUDIANTE, PROFESOR, ADMINISTRADOR
+- `fechaRegistro`: Fecha de registro (formato ISO: YYYY-MM-DD)
+- `activo`: Estado del usuario (true/false)
+
+###  **prestamos.csv**
+```csv
+id;usuarioId;libroId;fechaPrestamo;fechaDevolucionEsperada;fechaDevolucionReal;estado;notas
+1;1;1;2025-09-30;2025-10-15;;ACTIVO;
+2;3;2;2025-09-30;2025-10-15;;ACTIVO;
+```
+**Campos:**
+- `id`: Identificador único autogenerado
+- `usuarioId`: **Referencia** al ID del usuario (clave foránea)
+- `libroId`: **Referencia** al ID del libro (clave foránea)
+- `fechaPrestamo`: Fecha de inicio del préstamo
+- `fechaDevolucionEsperada`: Fecha límite de devolución
+- `fechaDevolucionReal`: Fecha real de devolución (vacío si está activo)
+- `estado`: ACTIVO, DEVUELTO, VENCIDO
+- `notas`: Observaciones adicionales (opcional)
+
+---
+
+##  Implementación Técnica
+
+###  **Características del Sistema CSV**
+
+#### **1. Codificación UTF-8**
+```java
+try (BufferedWriter bw = new BufferedWriter(
+        new OutputStreamWriter(new FileOutputStream(archivoCsv, false), StandardCharsets.UTF_8))) {
+    // Escritura con soporte completo de caracteres especiales
+}
+```
+- **Ventaja**: Soporte completo para acentos, ñ, símbolos especiales
+- **Compatibilidad**: Funciona en cualquier sistema operativo
+
+#### **2. Escape de Caracteres Especiales**
+```java
+private static String escape(String valor) {
+    if (valor == null) return "";
+    return valor.replace(";", ",")      // Evita romper columnas
+           .replace("\n", " ")          // Evita saltos de línea
+           .replace("\r", " ");         // Evita retornos de carro
+}
+```
+- **Separador**: Punto y coma (`;`) para evitar conflictos con comas en texto
+- **Robustez**: Maneja títulos como "El señor de los anillos: La comunidad"
+
+#### **3. Manejo de Valores Opcionales**
+```java
+// En Prestamo.toCsv()
+String fechaDevolucionRealStr = (fechaDevolucionReal != null) ? 
+                               fechaDevolucionReal.toString() : "";
+
+// En fromCsv()
+LocalDate fechaDevolucionReal = null;
+if (!p[5].trim().isEmpty()) {
+    fechaDevolucionReal = LocalDate.parse(p[5].trim());
+}
+```
+
+#### **4. Generación Automática de IDs**
+```java
+private int obtenerMaximoId() {
+    try {
+        List<Prestamo> prestamos = cargarTodos();
+        return prestamos.stream()
+                       .mapToInt(Prestamo::getId)
+                       .max()
+                       .orElse(0);
+    } catch (IOException e) {
+        return 0; // Si hay error, empezar desde 0
+    }
+}
+```
+
+###  **Flujo de Operaciones CRUD**
+
+#### **Crear (CREATE):**
+1. Asignar ID automático incremental
+2. Agregar a lista en memoria
+3. Guardar toda la lista al archivo CSV
+4. Confirmar operación
+
+#### **Leer (READ):**
+1. Cargar archivo CSV completo
+2. Parsear línea por línea
+3. Reconstruir objetos Java
+4. Devolver lista filtrada si es necesario
+
+#### **Actualizar (UPDATE):**
+1. Cargar todos los registros
+2. Buscar por ID y reemplazar
+3. Guardar lista completa al CSV
+4. Confirmar cambios
+
+#### **Eliminar (DELETE):**
+1. Cargar todos los registros
+2. Filtrar eliminando el registro objetivo
+3. Guardar lista filtrada al CSV
+4. Confirmar eliminación
+
+---
+
+##  Flujo de Datos
+
+###  **Secuencia de Inicialización**
+
+```mermaid
+sequenceDiagram
+    participant App as Aplicación
+    participant DE as DatosEjemplo
+    participant BR as BibliotecaRepo
+    participant UR as UsuarioRepo
+    participant PR as PrestamoRepo
+    participant CSV as Archivos CSV
+
+    App->>BR: new BibliotecaRepositorio()
+    App->>UR: new UsuarioRepositorio()
+    App->>PR: new PrestamoRepositorio()
+    
+    App->>PR: setUsuarioRepositorio(UR)
+    App->>PR: setBibliotecaRepositorio(BR)
+    PR->>PR: inicializarSiEsNecesario()
+    
+    App->>DE: cargarSiNoExisten(BR, UR, PR)
+    DE->>CSV: ¿Existen archivos?
+    
+    alt Archivos no existen
+        DE->>BR: crear libros ejemplo
+        BR->>CSV: guardar libros.csv
+        DE->>UR: crear usuarios ejemplo
+        UR->>CSV: guardar usuarios.csv
+        DE->>PR: crear préstamos ejemplo
+        PR->>CSV: guardar prestamos.csv
+    else Archivos existen
+        DE->>App: "Datos existentes encontrados"
+    end
+```
+
+###  **Resolución de Referencias en Préstamos**
+
+```mermaid
+graph TD
+    A[prestamos.csv] --> B[Leer línea: 1;1;7;...]
+    B --> C[Extraer usuarioId=1, libroId=7]
+    C --> D[usuarioRepo.obtenerPorId(1)]
+    C --> E[bibliotecaRepo.obtenerPorId(7)]
+    D --> F[Usuario: Ana García]
+    E --> G[Libro: El señor de los anillos]
+    F --> H[Prestamo.fromCsv(línea, usuario, libro)]
+    G --> H
+    H --> I[Préstamo completo con referencias]
+```
+
+---
+
+##  Manejo de Errores
+
+###  **Errores Comunes y Soluciones**
+
+#### **1. "No se pudieron resolver las referencias para el préstamo"**
+```
+CAUSA: El PrestamoRepositorio intenta cargar datos antes de que 
+       las dependencias (UsuarioRepositorio, BibliotecaRepositorio) 
+       sean inyectadas.
+
+SOLUCIÓN: Inicialización diferida implementada.
+```
+
+#### **2. Archivos CSV corruptos**
+```java
+try {
+    // Intento de parseo
+} catch (Exception e) {
+    System.err.println("Error al procesar línea CSV: " + linea + " - " + e.getMessage());
+    // Continúa con la siguiente línea
+}
+```
+
+#### **3. Problemas de codificación**
+```java
+// Forzar UTF-8 explícitamente
+try (BufferedReader br = new BufferedReader(
+        new InputStreamReader(new FileInputStream(archivoCsv), StandardCharsets.UTF_8))) {
+    // Lectura con codificación correcta
+}
+```
+
+#### **4. Permisos de archivo**
+```java
+private void asegurarDirectorio() {
+    File parent = archivoCsv.getParentFile();
+    if (parent != null && !parent.exists()) {
+        parent.mkdirs(); // Crear carpeta data/ si no existe
+    }
+}
+```
+
+###  **Estrategias de Recuperación**
+
+1. **Archivos faltantes**: Se crean automáticamente con datos de ejemplo
+2. **Líneas malformadas**: Se omiten y se registra el error
+3. **Referencias rotas**: Se reportan pero no detienen la carga
+4. **Permisos insuficientes**: Se informa al usuario para manual resolución
+
+---
+
+##  Consideraciones de Rendimiento
+
+###  **Optimizaciones Implementadas**
+
+#### **1. Carga Completa vs Operaciones Incrementales**
+- **Decisión**: Cargar archivo completo en memoria para cada operación
+- **Justificación**: Para bibliotecas pequeñas/medianas (< 10,000 registros), es más simple y confiable
+- **Alternativa futura**: Para bibliotecas grandes, implementar operaciones incrementales
+
+#### **2. Cacheo en Memoria**
+- **Actual**: Cada operación lee/escribe CSV completo
+- **Ventaja**: Consistencia garantizada, no hay problemas de concurrencia
+- **Desventaja**: Más I/O para operaciones frecuentes
+
+#### **3. Inicialización Diferida**
+```java
+private void inicializarSiEsNecesario() {
+    if (!inicializado && usuarioRepositorio != null && bibliotecaRepositorio != null) {
+        this.contadorId = obtenerMaximoId() + 1;
+        this.inicializado = true;
+    }
+}
+```
+- **Ventaja**: Evita errores de referencia durante la construcción
+- **Costo**: Verificación en cada operación pública
+
+###  **Métricas de Rendimiento Esperadas**
+
+| Operación | Registros | Tiempo Esperado |
+|-----------|-----------|----------------|
+| Cargar libros | 100 | < 10ms |
+| Cargar usuarios | 50 | < 5ms |
+| Cargar préstamos | 200 | < 20ms |
+| Crear préstamo | N/A | < 50ms |
+| Buscar libro | 100 | < 5ms |
+
+---
+
+##  Conclusiones y Próximos Pasos
+
+### ✅ **Objetivos Cumplidos**
+
+1. **✅ Persistencia Real**: Los datos se mantienen entre sesiones
+2. **✅ Sincronización**: Las tres aplicaciones comparten exactamente los mismos datos
+3. **✅ Integridad Referencial**: Las relaciones entre entidades se mantienen correctamente
+4. **✅ Manejo de Errores**: Sistema robusto que maneja casos edge
+5. **✅ Facilidad de Uso**: Transparente para el usuario final
+
+###  **Posibles Mejoras Futuras**
+
+1. ** Base de Datos Real**: Migración a SQLite o H2 para mejor rendimiento
+2. ** Operaciones Incrementales**: Append-only para operaciones de escritura
+3. ** Respaldo Automático**: Sistema de backups automáticos
+4. ** Compresión**: Para bibliotecas con miles de registros
+5. ** Encriptación**: Para datos sensibles de usuarios
+
+###  **Lecciones Aprendidas**
+
+1. **Orden de Dependencias**: La inyección de dependencias debe manejarse cuidadosamente
+2. **Inicialización Diferida**: Evita errores de construcción en sistemas con dependencias
+3. **Escape de Caracteres**: Fundamental para robustez del formato CSV
+4. **Centralización**: Una sola clase utilitaria evita duplicación de código
+5. **Codificación UTF-8**: Esencial para soporte internacional
+
+---
+
+** Documentación actualizada:** 30 de septiembre de 2025  
+** Implementado por:** Akir7002 (Mafe)  
+** Versión del sistema:** 2.0 - Persistencia CSV  
