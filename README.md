@@ -301,7 +301,7 @@ La aplicación incluye una biblioteca diversa con clásicos de la literatura:
 
 ### 📧 **Contacto**
 - **Desarrolladores**: Akir7002 (Maria Fernanda Patiño) y David Mauricio Perez
-- **Email** mariafernandap941@gmail.com 
+- **Email** mariafernandap941@gmail.com y dmauro.perez2001@gmail.com 
 -  **Repositorio**: [Sistema-de-Biblioteca/Biblioteca/Biblioteca](https://github.com/Akir7002/Sistema-de-Biblioteca.git)
 -  **Issues**: Reportar bugs en GitHub Issues 
 
