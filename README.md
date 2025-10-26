@@ -277,25 +277,6 @@ La aplicación incluye una biblioteca diversa con clásicos de la literatura:
    ```
 5.  **Pull Request** para revisión
 
-## 🆘 **Soporte y Resolución de Problemas**
-
-###  **Problemas Comunes**
-- **Error de compilación**: Verificar Java 8+ y Maven instalados, en caso de problemas eliminar carpeta `target/` manualmente y recompilar
-- **Interfaz no se abre**: Comprobar que no hay otra instancia ejecutándose  
-- **Archivos CSV corruptos**: Eliminar carpeta `data/` para regenerar datos de ejemplo
-- **Referencias no resueltas**: Reiniciar la aplicación para recargar dependencias
-- **Pérdida de datos**: Verificar permisos de escritura en la carpeta `data/`
-
-### 📧 **Contacto**
-- **Desarrolladores**: Akir7002 (Maria Fernanda Patiño) y David Mauricio Perez 
--  **Repositorio**: [Biblioteca-3-semestre](https://github.com/Akir7002/Biblioteca-3-semestre)
--  **Issues**: Reportar bugs en GitHub Issues
-
-##  **Licencia**
-Este proyecto está bajo la **Licencia MIT**. Consulta el archivo `LICENSE` para más detalles.
-
----
-
 ###  **¿Por qué elegir este Sistema de Biblioteca?**
 
 ✅ **Completo**: Tres tipos de interfaz para diferentes necesidades  
@@ -308,3 +289,24 @@ Este proyecto está bajo la **Licencia MIT**. Consulta el archivo `LICENSE` para
 ✅ **Educativo**: Código limpio ideal para aprendizaje de Java/Swing  
 
 **¡Perfecto para bibliotecas académicas, públicas o proyectos educativos!** 
+
+## 🆘 **Soporte y Resolución de Problemas**
+
+###  **Problemas Comunes**
+- **Error de compilación**: Verificar Java 8+ y Maven instalados, en caso de problemas eliminar carpeta `target/` manualmente y recompilar
+- **Interfaz no se abre**: Comprobar que no hay otra instancia ejecutándose  
+- **Archivos CSV corruptos**: Eliminar carpeta `data/` para regenerar datos de ejemplo
+- **Referencias no resueltas**: Reiniciar la aplicación para recargar dependencias
+- **Pérdida de datos**: Verificar permisos de escritura en la carpeta `data/`
+
+### 📧 **Contacto**
+- **Desarrolladores**: Akir7002 (Maria Fernanda Patiño) y David Mauricio Perez
+- **Email** mariafernandap941@gmail.com 
+-  **Repositorio**: [Sistema-de-Biblioteca/Biblioteca/Biblioteca](https://github.com/Akir7002/Sistema-de-Biblioteca.git)
+-  **Issues**: Reportar bugs en GitHub Issues 
+
+
+
+---
+
+
