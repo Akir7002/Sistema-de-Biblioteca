@@ -62,7 +62,7 @@ El proyecto está organizado siguiendo el patrón **MVC (Modelo-Vista-Controlado
 ### 1️ Preparación del proyecto
 ```bash
 # Clonar el repositorio
-git clone https://github.com/Akir7002/Biblioteca-3-semestre.git
+git clone https://github.com/Akir7002/Sistema-de-Biblioteca.git
 cd Biblioteca-3-semestre/Biblioteca/Biblioteca
 
 # Compilar el proyecto
